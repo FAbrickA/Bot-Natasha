@@ -193,7 +193,7 @@ class FinishTodayPoll(EverydaySend):
         global watch_eaters
 
         sleep(30)
-        self.sleep_to_next_call(finish=True, debug=False)  # !!!
+        self.sleep_to_next_call(finish=True, debug=True)  # !!!
         while True:
             watch_eaters = False
             count_peers = 200

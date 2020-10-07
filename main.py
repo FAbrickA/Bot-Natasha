@@ -146,7 +146,7 @@ class SendTodayPoll(EverydaySend):
     def run(self):
         global watch_eaters
 
-        self.sleep_to_next_call(debug=False)  # !!!
+        self.sleep_to_next_call(debug=True)  # !!!
         weekdays = ["понедельник", "вторник", "среда", "четверг", "пятница", "суббота", "воскресенье"]
         # conservations = vk_session.method(method='messages.getConversations',
         #                                   values={'count': 200, 'group_id': GROUP_ID, 'random_id': get_random_id()})
@@ -175,8 +175,10 @@ class SendTodayPoll(EverydaySend):
                     # print(all_eaters)
                     send_message_chat(text=make_notification(all_eaters[peer_id]), id=peer_id)
                     all_minimal_messages[peer_id] = None
+                    break
                 except vk_api.ApiError as e:
                     print(e)
+                    break
                     print2me(e)
                     if e.code == 917:
                         break
@@ -190,7 +192,7 @@ class FinishTodayPoll(EverydaySend):
     def run(self):
         global watch_eaters
 
-        sleep(15)
+        sleep(30)
         self.sleep_to_next_call(finish=True, debug=False)  # !!!
         while True:
             watch_eaters = False
@@ -208,7 +210,9 @@ class FinishTodayPoll(EverydaySend):
                             print("Can't delete message((", e)
                     send_message_chat(text=make_finish_notification(all_eaters[peer_id]), id=peer_id)
                     all_minimal_messages[peer_id] = None
+                    break
                 except vk_api.ApiError as e:
+                    break
                     print(e)
                     if e.code == 917:
                         break

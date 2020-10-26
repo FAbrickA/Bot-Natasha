@@ -1,18 +1,16 @@
 import vk_api
 from vk_api.utils import get_random_id
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
-import sqlite3
+import psycopg2
 import os
 import datetime as dt
 from time import sleep
 from threading import Thread
 from random import choice
-import os
-# import json
 
 TOKEN = os.environ.get("BOT_TOKEN")
+EVERYDAY_EATING_DB = os.environ.get("DATABASE_URL")
 DB_PATH = "db"
-EVERYDAY_EATING_DB = "everyday_eat"
 RESTORE_DB = 'restore_inf'
 PROFIT_DB = 'profit'
 EAT_TYPES = ["Завтрак", "Обед, карта", "Обед, наличка"]
@@ -23,86 +21,6 @@ watch_eaters = False
 all_eaters = {}  # key: peer_id, value: {'breakfast': [], 'dinner_card': [] ...},
 all_minimal_messages = {}  # Для хранения id сообщения с записью о столовке
 message_after_list = {}  # Хранит conv.id сообщений после команды .список
-
-
-if not os.path.exists(DB_PATH):
-    os.mkdir(DB_PATH)
-
-
-# def init_restore():
-#     global all_eaters, all_minimal_messages
-#
-#     db = db_connect(RESTORE_DB)
-#     c = db.cursor()
-#
-#     c.execute(f"""
-#                 CREATE TABLE IF NOT EXISTS "all_eaters" (
-#                 "peer_id"       INTEGER,
-#                 "eaters"        TEXT
-#                 );
-#             """)
-#     c.execute(f"""
-#         SELECT * FROM "all_eaters"
-#         """)
-#     arr = c.fetchall()
-#     print(arr)
-#     for key, value in arr:
-#         all_eaters[key] = json.loads(value)
-#     print(all_eaters)
-#
-#     c.execute(f"""
-#                 CREATE TABLE IF NOT EXISTS "all_minimal_messages" (
-#                 "peer_id"           INTEGER,
-#                 "conv_message_id"   INTEGER
-#                 );
-#             """)
-#     c.execute(f"""
-#             SELECT * FROM "all_minimal_messages"
-#         """)
-#     arr = c.fetchall()
-#     print(arr)
-#     for key, value in arr:
-#         all_minimal_messages[key] = value
-#     print(all_minimal_messages)
-#
-#     db.commit()
-#     db.close()
-
-
-# def clear_all_eaters_db():
-#     db = db_connect(RESTORE_DB)
-#     c = db.cursor()
-#
-#     c.execute(f"""
-#         DROP TABLE IF EXISTS "all_eaters"
-#         """)
-#
-#     db.commit()
-#     db.close()
-
-
-# def clear_all_minimal_messages_db():
-#     db = db_connect(RESTORE_DB)
-#     c = db.cursor()
-#
-#     c.execute(f"""
-#         DROP TABLE IF EXISTS "all_minimal_messages"
-#         """)
-#
-#     db.commit()
-#     db.close()
-
-
-# def store_all_eaters_db():
-#     global all_eaters
-#
-#     db = db_connect(RESTORE_DB)
-#     c = db.cursor()
-#
-#     for key, value in all_eaters.items():
-#         c.execute(f"""
-#             INSERT
-#             """)
 
 
 class EverydaySend(Thread):
@@ -147,19 +65,13 @@ class SendTodayPoll(EverydaySend):
         global watch_eaters
 
         self.sleep_to_next_call(debug=True)  # !!!
-        weekdays = ["понедельник", "вторник", "среда", "четверг", "пятница", "суббота", "воскресенье"]
-        # conservations = vk_session.method(method='messages.getConversations',
-        #                                   values={'count': 200, 'group_id': GROUP_ID, 'random_id': get_random_id()})
-        # pprint(conservations['items'])
         while True:
             watch_eaters = True
             count_peers = 200
             for i in range(1, count_peers + 1):
                 peer_id = 2000000000 + i
                 try:
-                    # send_message_chat(id=peer_id, text="Привет")
                     eaters = get_saved_eaters(peer_id)
-                    # print(eaters)
                     new_eaters = {'breakfast': [], 'dinner_card': [], 'dinner_nal': []}
                     for eater in eaters:
                         user_id, eat_types = eater
@@ -178,8 +90,8 @@ class SendTodayPoll(EverydaySend):
                     break
                 except vk_api.ApiError as e:
                     print(e)
-                    break
                     print2me(e)
+                    break
                     if e.code == 917:
                         break
             self.sleep_to_next_call()
@@ -192,7 +104,7 @@ class FinishTodayPoll(EverydaySend):
     def run(self):
         global watch_eaters
 
-        sleep(30)
+        sleep(40)
         self.sleep_to_next_call(finish=True, debug=True)  # !!!
         while True:
             watch_eaters = False
@@ -212,8 +124,8 @@ class FinishTodayPoll(EverydaySend):
                     all_minimal_messages[peer_id] = None
                     break
                 except vk_api.ApiError as e:
-                    break
                     print(e)
+                    break
                     if e.code == 917:
                         break
             self.sleep_to_next_call(finish=True)
@@ -299,9 +211,7 @@ def date_to_string(date: dt.datetime, only_date=False):
 
 
 def db_connect(path):
-    if len(path) > 2 and path[-3:] != ".db":
-        path += ".db"
-    return sqlite3.connect(DB_PATH + os.path.sep + path)
+    return psycopg2.connect(path)
 
 
 def create_table(chat_id):
@@ -319,7 +229,7 @@ def create_table(chat_id):
     db.close()
 
 
-def set_config(chat_id, chat_name=""):
+def set_config(chat_id, chat_name="None"):
     db = db_connect(EVERYDAY_EATING_DB)
     c = db.cursor()
 
@@ -330,12 +240,12 @@ def set_config(chat_id, chat_name=""):
             );
             """)
     c.execute(f"""
-        SELECT * FROM 'config' WHERE chat_id = '{chat_id}'
+        SELECT * FROM "config" WHERE chat_id = '{chat_id}'
         """)
     if not c.fetchone():
         c.execute(f"""
-                INSERT INTO config VALUES (?, ?)
-            """, (chat_id, chat_name))
+                INSERT INTO config VALUES ({chat_id}, '{chat_name}')
+            """)
 
     db.commit()
     db.close()
@@ -349,7 +259,7 @@ def set_new_mods(chat_id, user_id, mods):
     create_table(chat_id)
 
     c.execute(f"""
-            SELECT rowid, * from "{chat_id}"
+            SELECT * from "{chat_id}"
             WHERE user_id = '{user_id}'
         """)
     arr = c.fetchone()
@@ -357,12 +267,12 @@ def set_new_mods(chat_id, user_id, mods):
     if not arr:
         if not delete_flag:
             c.execute(f"""
-                INSERT INTO "{chat_id}" VALUES (?, ?)
-            """, (user_id, mods))
+                INSERT INTO "{chat_id}" VALUES ({user_id}, '{mods}')
+            """)
     else:
         if delete_flag:
             c.execute(f"""
-                DELETE FROM "{chat_id}" WHERE rowid = {arr[0]}
+                DELETE FROM "{chat_id}" WHERE user_id = {user_id}
             """)
         else:
             # mods_last = set(arr[2])
@@ -370,7 +280,7 @@ def set_new_mods(chat_id, user_id, mods):
             print(mods, "!")
             mods = "".join(sorted(list(mods), key=lambda x: int(x)))
             c.execute(f"""
-                    UPDATE '{chat_id}'
+                    UPDATE "{chat_id}"
                     SET eat_type = '{mods}'
                 """)
 
@@ -386,7 +296,7 @@ def get_saved_eaters(chat_id):
     set_config(chat_id)
     create_table(chat_id)
 
-    c.execute(f"""SELECT * FROM '{chat_id}'""")
+    c.execute(f"""SELECT * FROM "{chat_id}" """)
     arr = c.fetchall()
 
     db.commit()
@@ -403,7 +313,7 @@ def get_saved_eater1(chat_id, user_id):
     set_config(chat_id)
     create_table(chat_id)
 
-    c.execute(f"""SELECT eat_type FROM '{chat_id}' WHERE user_id = '{user_id}'""")
+    c.execute(f"""SELECT eat_type FROM "{chat_id}" WHERE user_id = {user_id}""")
     arr = c.fetchall()
 
     db.commit()
@@ -476,10 +386,6 @@ def delete_message_from_chat(peer_id, conversation_message_id=None):
                               'message': "(deleted)",
                               'group_id': GROUP_ID,
                               'conversation_message_id': conversation_message_id})
-    # return vk_session.method(method='messages.delete',
-    #                          values={'message_ids': get_message_ids(peer_id, message_id)[0],
-    #                                  'group_id': GROUP_ID,
-    #                                  'delete_for_all': 1})
 
 
 def pin_message(peer_id, conversation_message_id):
@@ -488,7 +394,6 @@ def pin_message(peer_id, conversation_message_id):
                               'conversation_message_id': all_minimal_messages[peer_id]})
 
 
-print("date now", dt.datetime.now())
 send_poll = SendTodayPoll(hours=18)
 finish_poll = FinishTodayPoll(hours=8)
 send_poll.start()
@@ -502,19 +407,8 @@ for event in longpool.listen():
             if not text:
                 continue
             if event.from_user:  # Если написали в ЛС
-                # if text.startswith("."):
-                #     commands = text.split()[1:]
-                #     if commands[0] == "add":
-                #         peer_id = int(commands[1])
-                #         user_id = int(commands[2])
-                #         add_today_eater(peer_id=peer_id, id=user_id, mod=mod)
-                #         vk_session.method(method="messages.edit",
-                #                           values={'peer_id': peer_id,
-                #                                   'message': make_notification(all_eaters[peer_id]),
-                #                                   'group_id': GROUP_ID,
-                #                                   'conversation_message_id': all_minimal_messages[peer_id]})
-                #
-                send_message_ls(text, event.message['from_id'])
+                # send_message_ls(text, event.message['from_id'])
+                pass
             else:
                 peer_id = event.message['peer_id']
                 conversation_message_id = event.message['conversation_message_id']

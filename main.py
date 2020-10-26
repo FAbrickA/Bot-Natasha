@@ -64,7 +64,7 @@ class SendTodayPoll(EverydaySend):
     def run(self):
         global watch_eaters
 
-        self.sleep_to_next_call(debug=True)  # !!!
+        self.sleep_to_next_call(debug=False)  # !!!
         while True:
             watch_eaters = True
             count_peers = 200
@@ -87,11 +87,11 @@ class SendTodayPoll(EverydaySend):
                     # print(all_eaters)
                     send_message_chat(text=make_notification(all_eaters[peer_id]), id=peer_id)
                     all_minimal_messages[peer_id] = None
-                    break
+                    # break
                 except vk_api.ApiError as e:
                     print(e)
                     print2me(e)
-                    break
+                    # break
                     if e.code == 917:
                         break
             self.sleep_to_next_call()
@@ -105,8 +105,11 @@ class FinishTodayPoll(EverydaySend):
         global watch_eaters
 
         sleep(40)
-        self.sleep_to_next_call(finish=True, debug=True)  # !!!
+        self.sleep_to_next_call(finish=True, debug=False)  # !!!
         while True:
+            if not watch_eaters:
+                self.sleep_to_next_call(finish=True)
+                continue
             watch_eaters = False
             count_peers = 200
             for i in range(1, count_peers + 1):
@@ -122,10 +125,10 @@ class FinishTodayPoll(EverydaySend):
                             print("Can't delete message((", e)
                     send_message_chat(text=make_finish_notification(all_eaters[peer_id]), id=peer_id)
                     all_minimal_messages[peer_id] = None
-                    break
+                    # break
                 except vk_api.ApiError as e:
                     print(e)
-                    break
+                    # break
                     if e.code == 917:
                         break
             self.sleep_to_next_call(finish=True)

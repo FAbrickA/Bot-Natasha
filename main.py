@@ -17,6 +17,7 @@ EAT_TYPES = ["Завтрак", "Обед, карта", "Обед, наличка
 GROUP_ID = 198636539
 INF = 999999999999999
 MY_ID = 222737315
+UTC = 3
 watch_eaters = False
 all_eaters = {}  # key: peer_id, value: {'breakfast': [], 'dinner_card': [] ...},
 all_minimal_messages = {}  # Для хранения id сообщения с записью о столовке
@@ -26,7 +27,7 @@ message_after_list = {}  # Хранит conv.id сообщений после к
 class EverydaySend(Thread):
     def __init__(self, hours=0, minutes=0, seconds=0):
         super().__init__()
-        self.seconds = hours * 60 * 60 + minutes * 60 + seconds
+        self.seconds = (hours - UTC) * 60 * 60 + minutes * 60 + seconds
         self.day_to_seconds = 24 * 60 * 60
 
     def sleep_to_next_call(self, debug=False, finish=False):

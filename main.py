@@ -398,7 +398,7 @@ def pin_message(peer_id, conversation_message_id):
                               'conversation_message_id': all_minimal_messages[peer_id]})
 
 
-send_poll = SendTodayPoll(hours=18)
+send_poll = SendTodayPoll(hours=18, minutes=37)
 finish_poll = FinishTodayPoll(hours=8)
 send_poll.start()
 finish_poll.start()
@@ -488,4 +488,6 @@ for event in longpool.listen():
     except vk_api.VkApiError as e:
         longpool = VkBotLongPoll(vk_session, GROUP_ID)
         print(e)
+        print2me(e)
+    except Exception as e:
         print2me(e)

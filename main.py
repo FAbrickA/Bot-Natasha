@@ -398,7 +398,7 @@ def pin_message(peer_id, conversation_message_id):
                               'conversation_message_id': all_minimal_messages[peer_id]})
 
 
-send_poll = SendTodayPoll(hours=18, minutes=37)
+send_poll = SendTodayPoll(hours=18)
 finish_poll = FinishTodayPoll(hours=8)
 send_poll.start()
 finish_poll.start()
@@ -411,8 +411,10 @@ for event in longpool.listen():
             if not text:
                 continue
             if event.from_user:  # Если написали в ЛС
+                if "ты тут" in text.lower():
+                    send_message_ls("Да!", event.message['from_id'])
                 # send_message_ls(text, event.message['from_id'])
-                pass
+                # pass
             else:
                 peer_id = event.message['peer_id']
                 conversation_message_id = event.message['conversation_message_id']

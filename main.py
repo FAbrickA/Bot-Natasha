@@ -90,8 +90,7 @@ class SendTodayPoll(EverydaySend):
                     all_minimal_messages[peer_id] = None
                     # break
                 except vk_api.ApiError as e:
-                    print(e)
-                    print2me(e)
+                    print("my_error1", e)
                     # break
                     if e.code == 917:
                         break
@@ -128,7 +127,7 @@ class FinishTodayPoll(EverydaySend):
                     all_minimal_messages[peer_id] = None
                     # break
                 except vk_api.ApiError as e:
-                    print(e)
+                    print("my_error2", e)
                     # break
                     if e.code == 917:
                         break
@@ -141,15 +140,16 @@ def get_username(user_id):  # Фамилия + имя
     name = response['first_name'] + " " + response['last_name']
     if name == "Роман Кислицын":
         return "РоМаН КисЛиЦЫн"
-    return response['first_name'] + " " + response['last_name']
+    return name
 
 
 def make_notification(eaters):
-    greetings = ["Привет, друзья!",
-                 "Приветствую всех!",
-                 "Доброго времени суток, друзья!",
-                 "Всем здравствуйте!",
-                 "Всем привет!"]
+    # greetings = ["Привет, друзья!",
+    #              "Приветствую всех!",
+    #              "Доброго времени суток, друзья!",
+    #              "Всем здравствуйте!",
+    #              "Всем привет!"]
+    greetings = ["Всем привет!"]
     breakfast = list(map(lambda x: " - " + x[1], eaters.get('breakfast', [])))
     dinner_card = list(map(lambda x: " - " + x[1], eaters.get('dinner_card', [])))
     dinner_nal = list(map(lambda x: " - " + x[1], eaters.get('dinner_nal', [])))
@@ -184,28 +184,28 @@ def make_finish_notification(eaters):
     return text
 
 
-def send_notification(chat_id):
-    greetings = ["Привет, друзья!",
-                 "Приветствую всех!",
-                 "Доброго времени суток, друзья!",
-                 "Всем здравствуйте!",
-                 "Всем привет!",
-                 "Guten Morgen!"]
-
-    p = "+"  # plus
-    m = ""  # minus
-
-    text = f"{greetings[0]}\n" \
-        f"Начинается запись в столовую! Кто будет есть, поставьте пожалуйста ++ *тип питания*\n" \
-        f"Например, ++ Обед, карта\n" \
-        f"Если хотите отменить запись, то нужно ввести {m * 2} *тип питания*\n" \
-        f"Так же можно записаться на постоянку, чтобы каждый раз не отмечаться. Для этого нужно написать " \
-        f"+++ *тип питания*, например, +++ Обед, карта.\n" \
-        f"Отписаться от постоянки можно так: {m * 3} *тип питания*\n" \
-        f"Прошу писать всё корректно и на всякий случай проверять, что вы появились в списке\n" \
-        f"*Beta test*\n" \
-        f"(c) Роман Кислицын"
-    send_message_chat(id=chat_id, text=make_notification(eaters={}))
+# def send_notification(chat_id):
+#     greetings = ["Привет, друзья!",
+#                  "Приветствую всех!",
+#                  "Доброго времени суток, друзья!",
+#                  "Всем здравствуйте!",
+#                  "Всем привет!",
+#                  "Guten Morgen!"]
+#
+#     p = "+"  # plus
+#     m = ""  # minus
+#
+#     text = f"{greetings[0]}\n" \
+#         f"Начинается запись в столовую! Кто будет есть, поставьте пожалуйста ++ *тип питания*\n" \
+#         f"Например, ++ Обед, карта\n" \
+#         f"Если хотите отменить запись, то нужно ввести {m * 2} *тип питания*\n" \
+#         f"Так же можно записаться на постоянку, чтобы каждый раз не отмечаться. Для этого нужно написать " \
+#         f"+++ *тип питания*, например, +++ Обед, карта.\n" \
+#         f"Отписаться от постоянки можно так: {m * 3} *тип питания*\n" \
+#         f"Прошу писать всё корректно и на всякий случай проверять, что вы появились в списке\n" \
+#         f"*Beta test*\n" \
+#         f"(c) Роман Кислицын"
+#     send_message_chat(id=chat_id, text=make_notification(eaters={}))
 
 
 def date_to_string(date: dt.datetime, only_date=False):
@@ -355,8 +355,19 @@ def delete_today_eater(peer_id, id, mod):
                 return True
 
 
+class MyVkBotLongPoll(VkBotLongPoll):
+    def listen(self):
+        try:
+            while True:
+                for event in self.check():
+                    yield event
+        except Exception as e:
+            print("my_error", e)
+            sleep(3)
+
+
 vk_session = vk_api.VkApi(token=TOKEN)
-longpool = VkBotLongPoll(vk_session, GROUP_ID)
+longpool = MyVkBotLongPoll(vk_session, GROUP_ID)
 vk = vk_session.get_api()
 print("Bot started!")
 
@@ -488,8 +499,6 @@ for event in longpool.listen():
                                                       'group_id': GROUP_ID,
                                                       'conversation_message_id': all_minimal_messages[peer_id]})
     except vk_api.VkApiError as e:
-        longpool = VkBotLongPoll(vk_session, GROUP_ID)
-        print(e)
-        print2me(e)
+        print("my_error", e)
     except Exception as e:
-        print2me(e)
+        print("my_error", e)

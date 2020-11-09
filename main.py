@@ -79,11 +79,11 @@ class SendTodayPoll(EverydaySend):
                         eat_types = str(eat_types)
                         name = get_username(user_id=user_id)
                         if "1" in eat_types:
-                            new_eaters['breakfast'].append((user_id, name))
+                            new_eaters['breakfast'].append((user_id, name, ""))
                         if "2" in eat_types:
-                            new_eaters['dinner_card'].append((user_id, name))
+                            new_eaters['dinner_card'].append((user_id, name, ""))
                         if "3" in eat_types:
-                            new_eaters['dinner_nal'].append((user_id, name))
+                            new_eaters['dinner_nal'].append((user_id, name, ""))
                     all_eaters[peer_id] = new_eaters
                     # print(all_eaters)
                     send_message_chat(text=make_notification(all_eaters[peer_id]), id=peer_id)
@@ -104,7 +104,6 @@ class FinishTodayPoll(EverydaySend):
     def run(self):
         global watch_eaters
 
-        sleep(40)
         self.sleep_to_next_call(finish=True, debug=False)  # !!!
         while True:
             if not watch_eaters:
@@ -144,15 +143,21 @@ def get_username(user_id):  # Фамилия + имя
 
 
 def make_notification(eaters):
+    def make_line(param):
+        text = " - " + param[1]
+        if len(param) < 3 or not param[2]:
+            return text
+        return text + f" ({param[2]})"
+
     # greetings = ["Привет, друзья!",
     #              "Приветствую всех!",
     #              "Доброго времени суток, друзья!",
     #              "Всем здравствуйте!",
     #              "Всем привет!"]
     greetings = ["Всем привет!"]
-    breakfast = list(map(lambda x: " - " + x[1], eaters.get('breakfast', [])))
-    dinner_card = list(map(lambda x: " - " + x[1], eaters.get('dinner_card', [])))
-    dinner_nal = list(map(lambda x: " - " + x[1], eaters.get('dinner_nal', [])))
+    breakfast = list(map(make_line, eaters.get('breakfast', [])))
+    dinner_card = list(map(make_line, eaters.get('dinner_card', [])))
+    dinner_nal = list(map(make_line, eaters.get('dinner_nal', [])))
     nl = "\n"
     text = f"{choice(greetings)} Начинается запись в столовую.\n\n" \
         f"1) Завтрак:\n" \
@@ -166,9 +171,15 @@ def make_notification(eaters):
 
 
 def make_finish_notification(eaters):
-    breakfast = list(map(lambda x: " - " + x[1], eaters.get('breakfast', [])))
-    dinner_card = list(map(lambda x: " - " + x[1], eaters.get('dinner_card', [])))
-    dinner_nal = list(map(lambda x: " - " + x[1], eaters.get('dinner_nal', [])))
+    def make_line(param):
+        text = " - " + param[1]
+        if len(param) < 3 or not param[2]:
+            return text
+        return text + f" ({param[2]})"
+
+    breakfast = list(map(make_line, eaters.get('breakfast', [])))
+    dinner_card = list(map(make_line, eaters.get('dinner_card', [])))
+    dinner_nal = list(map(make_line, eaters.get('dinner_nal', [])))
     nl = "\n"  # new line
     weekdays = ["понедельник", "вторник", "среду", "четверг", "пятницу", "субботу", "воскресенье"]
     today_weekday = weekdays[dt.date.today().weekday()]
@@ -328,16 +339,24 @@ def get_saved_eater1(chat_id, user_id):
     return arr[0][0]
 
 
-def add_today_eater(peer_id, id, mod):
+def add_today_eater(peer_id, id, mod, comment=""):
+    arr = None
     if mod == "1":
-        if id not in list(map(lambda x: x[0], all_eaters[peer_id]['breakfast'])):
-            all_eaters[peer_id]['breakfast'].append((id, get_username(id)))
+        arr = all_eaters[peer_id]['breakfast']
     elif mod == "2":
-        if id not in list(map(lambda x: x[0], all_eaters[peer_id]['dinner_card'])):
-            all_eaters[peer_id]['dinner_card'].append((id, get_username(id)))
+        arr = all_eaters[peer_id]['dinner_card']
     elif mod == "3":
-        if id not in list(map(lambda x: x[0], all_eaters[peer_id]['dinner_nal'])):
-            all_eaters[peer_id]['dinner_nal'].append((id, get_username(id)))
+        arr = all_eaters[peer_id]['dinner_nal']
+    if arr is not None:
+        find_user = False
+        for i in range(len(arr)):
+            params = arr[i]
+            if params[0] == id:
+                find_user = True
+                arr[i] = params[0], params[1], comment
+                break
+        if not find_user:
+            arr.append((id, get_username(id), comment))
 
 
 def delete_today_eater(peer_id, id, mod):
@@ -357,13 +376,13 @@ def delete_today_eater(peer_id, id, mod):
 
 class MyVkBotLongPoll(VkBotLongPoll):
     def listen(self):
-        try:
-            while True:
+        while True:
+            try:
                 for event in self.check():
                     yield event
-        except Exception as e:
-            print("my_error", e)
-            sleep(3)
+            except Exception as e:
+                print("my_error", e)
+                sleep(5)
 
 
 vk_session = vk_api.VkApi(token=TOKEN)
@@ -446,12 +465,16 @@ for event in longpool.listen():
                             send_message_chat(text=make_finish_notification(all_eaters[peer_id]), id=peer_id)
                         all_minimal_messages[peer_id] = None
                 elif watch_eaters:
-                    text = text.replace(" ", "")
-                    if text.startswith("++"):
-                        if len(text) > 2:
+                    if not text:
+                        continue
+                    text = text.split()
+                    command = text[0]
+                    comment = " ".join(text[1:])
+                    if command.startswith("++"):
+                        if len(command) > 2:
                             mods = get_saved_eater1(chat_id=peer_id, user_id=from_id)
                             mods = str(mods) if mods else ""
-                            mod = text[2]
+                            mod = command[2]
                             if mod not in "123":
                                 continue
                             if not mods:
@@ -459,25 +482,25 @@ for event in longpool.listen():
                             else:
                                 mods = "".join(list(set(list(mods)) | set(mod)))
                                 set_new_mods(peer_id, user_id=from_id, mods=mods)
-                        text = text[1:]
-                    if text.startswith("+"):
-                        if len(text) > 1:
-                            mod = text[1]
+                        command = command[1:]
+                    if command.startswith("+"):
+                        if len(command) > 1:
+                            mod = command[1]
                             if mod not in "123":
                                 continue
-                            add_today_eater(peer_id=peer_id, id=from_id, mod=mod)
+                            add_today_eater(peer_id=peer_id, id=from_id, mod=mod, comment=comment)
                             vk_session.method(method="messages.edit",
                                               values={'peer_id': peer_id,
                                                       'message': make_notification(all_eaters[peer_id]),
                                                       'group_id': GROUP_ID,
                                                       'conversation_message_id': all_minimal_messages[peer_id]})
-                    elif text.startswith("--") or text.startswith("—"):
-                        if text.startswith("—"):
-                            text = "--" + text[1:]
-                        if len(text) > 2:
+                    elif command.startswith("--") or command.startswith("—"):
+                        if command.startswith("—"):
+                            command = "--" + command[1:]
+                        if len(command) > 2:
                             mods = get_saved_eater1(chat_id=peer_id, user_id=from_id)
                             mods = str(mods) if mods else ""
-                            mod = text[2]
+                            mod = command[2]
                             if mod not in "123":
                                 continue
                             if mods:
@@ -486,10 +509,10 @@ for event in longpool.listen():
                                 else:
                                     mods = "".join(list(set(list(mods)) - set(mod)))
                                     set_new_mods(peer_id, user_id=from_id, mods=mods)
-                        text = text[1:]
-                    if text.startswith("-"):
-                        if len(text) > 1:
-                            mod = text[1]
+                        command = command[1:]
+                    if command.startswith("-"):
+                        if len(command) > 1:
+                            mod = command[1]
                             if mod not in "123":
                                 continue
                             delete_today_eater(peer_id=peer_id, id=from_id, mod=mod)

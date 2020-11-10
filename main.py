@@ -381,7 +381,7 @@ class MyVkBotLongPoll(VkBotLongPoll):
                 for event in self.check():
                     yield event
             except Exception as e:
-                print("my_error", e)
+                print("my_error_listen", e)
                 sleep(5)
 
 
@@ -522,6 +522,6 @@ for event in longpool.listen():
                                                       'group_id': GROUP_ID,
                                                       'conversation_message_id': all_minimal_messages[peer_id]})
     except vk_api.VkApiError as e:
-        print("my_error", e)
+        print("my_error3", e)
     except Exception as e:
-        print("my_error", e)
+        print("my_error3-1", e)

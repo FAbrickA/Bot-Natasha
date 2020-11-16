@@ -98,6 +98,8 @@ class SendTodayPoll(EverydaySend):
                     # break
                     if e.code == 917:
                         break
+                except Exception as e:
+                    print("my_error1", 2)
             self.sleep_to_next_call()
 
 
@@ -127,6 +129,7 @@ class FinishTodayPoll(EverydaySend):
                                                      conversation_message_id=message_after_list[peer_id])
                         except vk_api.ApiError as e:
                             print("Can't delete message((", e)
+                    print("all_eaters", all_eaters)
                     send_message_chat(text=make_finish_notification(all_eaters[peer_id]), id=peer_id)
                     delete_all_message(peer_id)
                     # break
@@ -135,6 +138,8 @@ class FinishTodayPoll(EverydaySend):
                     # break
                     if e.code == 917:
                         break
+                except Exception as e:
+                    print("my_error2", e)
             self.sleep_to_next_call(finish=True)
 
 

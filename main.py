@@ -22,6 +22,7 @@ watch_eaters = False
 all_eaters = {}  # key: peer_id, value: {'breakfast': [], 'dinner_card': [], 'dinner_nal'},
 all_minimal_messages = {}  # Для хранения id сообщения с записью о столовке
 message_after_list = {}  # Хранит conv.id сообщений после команды .список
+TEST = False
 
 
 class EverydaySend(Thread):
@@ -72,6 +73,8 @@ class SendTodayPoll(EverydaySend):
             drop_restore_db()
             set_config_restore()
             for i in range(1, count_peers + 1):
+                if i == 3 and TEST:
+                    continue
                 peer_id = 2000000000 + i
                 try:
                     eaters = get_saved_eaters(peer_id)
@@ -98,8 +101,6 @@ class SendTodayPoll(EverydaySend):
                     # break
                     if e.code == 917:
                         break
-                except Exception as e:
-                    print("my_error1", 2)
             self.sleep_to_next_call()
 
 
@@ -119,6 +120,8 @@ class FinishTodayPoll(EverydaySend):
             set_watch_eaters(False)
             count_peers = 200
             for i in range(1, count_peers + 1):
+                if i == 3 and TEST:
+                    continue
                 peer_id = 2000000000 + i
                 try:
                     if get_all_minimal_message(peer_id) is not None:
@@ -129,8 +132,8 @@ class FinishTodayPoll(EverydaySend):
                                                      conversation_message_id=message_after_list[peer_id])
                         except vk_api.ApiError as e:
                             print("Can't delete message((", e)
-                    print("all_eaters", all_eaters)
-                    send_message_chat(text=make_finish_notification(all_eaters[peer_id]), id=peer_id)
+                    if peer_id in all_eaters:
+                        send_message_chat(text=make_finish_notification(all_eaters[peer_id]), id=peer_id)
                     delete_all_message(peer_id)
                     # break
                 except vk_api.ApiError as e:
@@ -138,8 +141,6 @@ class FinishTodayPoll(EverydaySend):
                     # break
                     if e.code == 917:
                         break
-                except Exception as e:
-                    print("my_error2", e)
             self.sleep_to_next_call(finish=True)
 
 
@@ -218,6 +219,9 @@ def string_to_date(date_str: str, only_date=False):
 
 
 def db_connect(path):
+    # if not path.endswith(".db"):
+    #     path += ".db"
+    # return sqlite3.connect(path)
     return psycopg2.connect(path)
 
 
@@ -375,7 +379,7 @@ def set_new_mods(chat_id, user_id, mods):
             mods = "".join(sorted(list(mods), key=lambda x: int(x)))
             c.execute(f"""
                     UPDATE "{chat_id}"
-                    SET eat_type = '{mods}'
+                    SET eat_type = '{mods}' WHERE user_id = {user_id}
                 """)
 
     db.commit()
@@ -491,7 +495,7 @@ def add_today_eater_restore(chat_id, user_id, mods, comments=""):
             mods = "".join(sorted(list(mods), key=lambda x: int(x)))
             c.execute(f"""
                 UPDATE "{chat_id}"
-                SET eat_type = '{mods}', comments = '{comments}'
+                SET eat_type = '{mods}', comments = '{comments}' WHERE user_id = {user_id}
             """)
 
     db.commit()
@@ -568,7 +572,7 @@ def do_restore(need_watch_eaters):
             continue
         new_eaters = {'breakfast': [], 'dinner_card': [], 'dinner_nal': []}
         if not eaters:
-            continue
+            eaters = []
         for eater in eaters:
             user_id, eat_types, comments = eater
             comments = comments.split("\n")
@@ -768,6 +772,6 @@ for event in longpool.listen():
                                     mods = "".join(list(set(list(mods)) - set(mod)))
                                     add_today_eater_restore(peer_id, user_id=from_id, mods=mods, comments=comments)
     except vk_api.VkApiError as e:
-        print("watching_error", e)
+        print("my_longpoll", e)
     except Exception as e:
-        print("watching_error1", e)
+        print("my_longpoll-1", e)

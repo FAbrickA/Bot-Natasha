@@ -479,6 +479,7 @@ def add_today_eater_restore(chat_id, user_id, mods, comments=""):
     """)
     arr = c.fetchone()
     delete_flag = True if mods == "0" else False
+    print("add restore eater: ", user_id, mods, comments)
     if not arr:
         if not delete_flag:
             c.execute(f"""

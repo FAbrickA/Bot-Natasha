@@ -475,7 +475,7 @@ def add_today_eater_restore(chat_id, user_id, mods, comments=""):
 
     c.execute(f"""
         SELECT * from "{chat_id}"
-        WHERE user_id = '{user_id}'
+        WHERE user_id = {user_id}
     """)
     arr = c.fetchone()
     delete_flag = True if mods == "0" else False
@@ -571,6 +571,7 @@ def do_restore(need_watch_eaters):
             # print("db_error", e)
             continue
         new_eaters = {'breakfast': [], 'dinner_card': [], 'dinner_nal': []}
+        print("eaters", eaters)
         if not eaters:
             eaters = []
         for eater in eaters:

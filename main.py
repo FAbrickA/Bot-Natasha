@@ -424,7 +424,7 @@ def get_restored_eaters1(chat_id, user_id):
     db = db_connect(RESTORE_DB)
     c = db.cursor()
 
-    # create_table_restore(chat_id)
+    create_table_restore(chat_id)
 
     c.execute(f"""SELECT eat_type, comments FROM "{chat_id}" WHERE user_id = {user_id} """)
     arr = c.fetchone()
@@ -715,7 +715,7 @@ for event in longpool.listen():
                                                       'conversation_message_id': get_all_minimal_message(peer_id)})
                             data = get_restored_eaters1(chat_id=peer_id, user_id=from_id)
                             if data is None:
-                                continue
+                                data = (None, "")
                             mods, comments = data
                             comments = comments.split("\n")
                             while len(comments) < 3:
@@ -758,7 +758,7 @@ for event in longpool.listen():
                                                       'conversation_message_id': get_all_minimal_message(peer_id)})
                             data = get_restored_eaters1(chat_id=peer_id, user_id=from_id)
                             if data is None:
-                                continue
+                                data = (None, "")
                             mods, comments = data
                             comments = comments.split("\n")
                             while len(comments) < 3:

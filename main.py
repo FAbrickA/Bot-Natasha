@@ -539,6 +539,7 @@ def delete_today_eater(peer_id, id, mod):
 
 
 def drop_restore_db():
+    print("dropping table...")
     db = db_connect(RESTORE_DB)
     c = db.cursor()
     c.execute("""DROP TABLE IF EXISTS "config" """)
@@ -546,7 +547,9 @@ def drop_restore_db():
     count_peers = 15
     for i in range(1, count_peers + 1):
         peer_id = 2000000000 + i
-        c.execute(f"""DROP TABLE IF EXISTS"{peer_id}" """)
+        c.execute(f"""DROP TABLE IF EXISTS "{peer_id}" """)
+    db.commit()
+    db.close()
 
 
 class MyVkBotLongPoll(VkBotLongPoll):

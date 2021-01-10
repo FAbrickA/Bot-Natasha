@@ -649,7 +649,7 @@ def pin_message(peer_id, conversation_message_id):
                               'conversation_message_id': get_all_minimal_message(peer_id)})
 
 
-send_poll = SendTodayPoll(hours=18)
+send_poll = SendTodayPoll(hours=20, minutes=20)
 finish_poll = FinishTodayPoll(hours=8)
 send_poll.start()
 finish_poll.start()

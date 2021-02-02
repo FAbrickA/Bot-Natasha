@@ -754,12 +754,18 @@ for event in longpool.listen():
                             if mod not in "123":
                                 continue
                             delete_today_eater(peer_id=peer_id, id=from_id, mod=mod)
-                            vk_session.method(method="messages.edit",
-                                              values={'peer_id': peer_id,
-                                                      'message': make_notification(all_eaters[peer_id]),
-                                                      'group_id': GROUP_ID,
-                                                      'conversation_message_id': get_all_minimal_message(peer_id)})
-                            data = get_restored_eaters1(chat_id=peer_id, user_id=from_id)
+                            try:
+                                vk_session.method(method="messages.edit",
+                                                  values={'peer_id': peer_id,
+                                                          'message': make_notification(all_eaters[peer_id]),
+                                                          'group_id': GROUP_ID,
+                                                          'conversation_message_id': get_all_minimal_message(peer_id)})
+                            except Exception as e:
+                                print("error 111", e)
+                            try:
+                                data = get_restored_eaters1(chat_id=peer_id, user_id=from_id)
+                            except Exception as e:
+                                print("error 222", e)
                             if data is None:
                                 data = (None, "")
                             mods, comments = data
@@ -769,6 +775,7 @@ for event in longpool.listen():
                             mods = str(mods) if mods else ""
                             index = "123".find(mod)
                             comments[index] = ""
+                            print("if no error", mods, comments)
                             comments = "\n".join(comments)
                             if mods:
                                 if mods == mod:

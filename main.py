@@ -66,7 +66,7 @@ class SendTodayPoll(EverydaySend):
     def run(self):
         global watch_eaters
 
-        self.sleep_to_next_call(debug=True)  # !!!
+        self.sleep_to_next_call(debug=False)  # !!!
         while True:
             set_watch_eaters(True)
             count_peers = 200

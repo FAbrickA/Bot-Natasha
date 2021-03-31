@@ -8,6 +8,8 @@ from time import sleep
 from threading import Thread
 from random import choice
 
+
+# first april edition готово
 TOKEN = os.environ.get("BOT_TOKEN")
 EVERYDAY_EATING_DB = os.environ.get("DATABASE_URL")
 DB_PATH = "db"
@@ -23,6 +25,9 @@ all_eaters = {}  # key: peer_id, value: {'breakfast': [], 'dinner_card': [], 'di
 all_minimal_messages = {}  # Для хранения id сообщения с записью о столовке
 message_after_list = {}  # Хранит conv.id сообщений после команды .список
 TEST = False
+utc_timedelta = dt.timedelta(hours=UTC)
+
+ege_russian_date = dt.datetime(2021, 6, 4, 10, 0, 0) - utc_timedelta
 
 
 class EverydaySend(Thread):
@@ -144,13 +149,72 @@ class FinishTodayPoll(EverydaySend):
             self.sleep_to_next_call(finish=True)
 
 
+def transliterate(string: str):
+    dictionary = {
+        'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'e',
+        'ж': 'zh', 'з': 'z', 'и': 'i', 'й': 'i', 'к': 'k', 'л': 'l', 'м': 'm', 'н': 'n',
+        'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u', 'ф': 'f', 'х': 'h',
+        'ц': 'c', 'ч': 'ch', 'ш': 'sh', 'щ': 'sh', 'ъ': '', 'ы': 'y', 'ь': '', 'э': 'e',
+        'ю': 'u', 'я': 'ya'
+    }
+    new_string = ""
+    for c in string:
+        new_c = c
+        c_lower = c.lower()
+        if c_lower in dictionary:
+            new_c = dictionary[c_lower]
+            if c.isupper():
+                new_c = new_c.capitalize()
+        new_string += new_c
+    return new_string
+
+
 def get_username(user_id):  # Фамилия + имя
     response = vk_session.method(method='users.get',
                                  values={'user_ids': user_id})[0]
     name = response['first_name'] + " " + response['last_name']
     if name == "Роман Кислицын":
-        return "РоМаН КисЛиЦЫн"
-    return name
+        name = "РоМаН КисЛиЦЫн"
+    # return name
+    # first april
+    new_name = ""
+    for word in name.split():
+        new_name += "".join(list(word)[::-1]).capitalize() + " "
+    return new_name[:-1]
+
+
+# first april edit
+def timedelta_to_humanity(delta: dt.timedelta):
+    def get_numbers_form(number, forms):
+        number %= 100
+        if number // 10 == 1:
+            return forms[0]
+        number %= 10
+        if number == 1:
+            return forms[1]
+        elif number in (2, 3, 4):
+            return forms[2]
+        return forms[0]
+
+    days_forms = ["дней", "день", "дня"]
+    hours_forms = ["часов", "час", "часа"]
+    minutes_forms = ["минут", "минута", "минуты"]
+    seconds_forms = ["секунд", "секунда", "секунды"]
+    days = int(delta.days)
+    day_seconds = round(delta.seconds)
+    hours = day_seconds // 3600
+    minutes = day_seconds // 60 % 60
+    seconds = day_seconds % 60
+    days_str = f"{days} {get_numbers_form(days, days_forms)}"
+    hours_str = f"{hours} {get_numbers_form(hours, hours_forms)}"
+    minutes_str = f"{minutes} {get_numbers_form(minutes, minutes_forms)}"
+    seconds_str = f"{seconds} {get_numbers_form(seconds, seconds_forms)}"
+    if days >= 10:
+        return f"{days_str} {hours_str} 😀"
+    elif days >= 1:
+        return f"{days_str} {hours_str} {minutes_str} 😱"
+    else:
+        return f"{hours_str} {minutes_str} {seconds_str} 😈"
 
 
 def make_notification(eaters):
@@ -170,14 +234,22 @@ def make_notification(eaters):
     dinner_card = list(map(make_line, eaters.get('dinner_card', [])))
     dinner_nal = list(map(make_line, eaters.get('dinner_nal', [])))
     nl = "\n"
+    # first april edit
+    timedelta = ege_russian_date - dt.datetime.now()
+    need_ege = True
+    if timedelta.total_seconds() <= 0:
+        need_ege = False
     text = f"{choice(greetings)} Начинается запись в столовую.\n\n" \
         f"1) Завтрак:\n" \
         f"{nl.join(breakfast) if breakfast else '...'}\n\n" \
         f"2) Обед, карта:\n" \
         f"{nl.join(dinner_card) if dinner_card else '...'}\n\n" \
         f"3) Обед, наличка:\n" \
-        f"{nl.join(dinner_nal) if dinner_nal else '...'}\n\n"
-
+        f"{nl.join(dinner_nal) if dinner_nal else '...'}\n\n" \
+        f"First april edition 😛"  # first april edit
+    if need_ege:  # first april edit
+        ege_text = f"До ЕГЭ по русскому осталось: {timedelta_to_humanity(timedelta)}"
+        text = ege_text + "\n\n" + text
     return text
 
 
@@ -195,13 +267,22 @@ def make_finish_notification(eaters):
     weekdays = ["понедельник", "вторник", "среду", "четверг", "пятницу", "субботу", "воскресенье"]
     today_weekday = weekdays[dt.date.today().weekday()]
     today_date = date_to_string(dt.datetime.now(), only_date=True)
+    # first april edit
+    timedelta = ege_russian_date - dt.datetime.now()
+    need_ege = True
+    if timedelta.total_seconds() <= 0:
+        need_ege = False
     text = f"Итак, друзья. Запись в столовую на {today_weekday} {today_date} окончена!\n" \
         f"1) Завтрак:\n" \
         f"{nl.join(breakfast) if breakfast else '...'}\n\n" \
         f"2) Обед, карта:\n" \
         f"{nl.join(dinner_card) if dinner_card else '...'}\n\n" \
         f"3) Обед, наличка:\n" \
-        f"{nl.join(dinner_nal) if dinner_nal else '...'}\n\n"
+        f"{nl.join(dinner_nal) if dinner_nal else '...'}\n\n" \
+        f"First april edition 😛"  # first april edit
+    if need_ege:  # first april edit
+        ege_text = f"До ЕГЭ по русскому осталось: {timedelta_to_humanity(timedelta)}"
+        text = ege_text + "\n\n" + text
 
     return text
 
@@ -479,7 +560,6 @@ def add_today_eater_restore(chat_id, user_id, mods, comments=""):
     """)
     arr = c.fetchone()
     delete_flag = True if mods == "0" else False
-    print("add restore eater: ", user_id, mods, comments)
     if not arr:
         if not delete_flag:
             c.execute(f"""
@@ -539,7 +619,6 @@ def delete_today_eater(peer_id, id, mod):
 
 
 def drop_restore_db():
-    print("dropping table...")
     db = db_connect(RESTORE_DB)
     c = db.cursor()
     c.execute("""DROP TABLE IF EXISTS "config" """)
@@ -547,7 +626,7 @@ def drop_restore_db():
     count_peers = 15
     for i in range(1, count_peers + 1):
         peer_id = 2000000000 + i
-        c.execute(f"""DROP TABLE IF EXISTS "{peer_id}" """)
+        c.execute(f"""DROP TABLE IF EXISTS"{peer_id}" """)
     db.commit()
     db.close()
 
@@ -575,7 +654,6 @@ def do_restore(need_watch_eaters):
             # print("db_error", e)
             continue
         new_eaters = {'breakfast': [], 'dinner_card': [], 'dinner_nal': []}
-        print("eaters", eaters)
         if not eaters:
             eaters = []
         for eater in eaters:
@@ -649,7 +727,7 @@ def pin_message(peer_id, conversation_message_id):
                               'conversation_message_id': get_all_minimal_message(peer_id)})
 
 
-send_poll = SendTodayPoll(hours=18, minutes=0)
+send_poll = SendTodayPoll(hours=17, minutes=0)
 finish_poll = FinishTodayPoll(hours=8, minutes=10)
 send_poll.start()
 finish_poll.start()
@@ -691,7 +769,7 @@ for event in longpool.listen():
                         continue
                     text = text.split()
                     command = text[0]
-                    comment = " ".join(text[1:])
+                    comment = transliterate(" ".join(text[1:]))  # first april edit
                     if command.startswith("++"):
                         if len(command) > 2:
                             mods = get_saved_eater1(chat_id=peer_id, user_id=from_id)
@@ -775,7 +853,6 @@ for event in longpool.listen():
                             mods = str(mods) if mods else ""
                             index = "123".find(mod)
                             comments[index] = ""
-                            print("if no error", mods, comments)
                             comments = "\n".join(comments)
                             if mods:
                                 if mods == mod:

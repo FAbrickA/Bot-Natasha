@@ -175,12 +175,12 @@ def get_username(user_id):  # Фамилия + имя
     name = response['first_name'] + " " + response['last_name']
     if name == "Роман Кислицын":
         name = "РоМаН КисЛиЦЫн"
-    # return name
-    # first april
-    new_name = ""
-    for word in name.split():
-        new_name += "".join(list(word)[::-1]).capitalize() + " "
-    return new_name[:-1]
+    return name
+    # # first april
+    # new_name = ""
+    # for word in name.split():
+    #     new_name += "".join(list(word)[::-1]).capitalize() + " "
+    # return new_name[:-1]
 
 
 # first april edit
@@ -246,7 +246,7 @@ def make_notification(eaters):
         f"{nl.join(dinner_card) if dinner_card else '...'}\n\n" \
         f"3) Обед, наличка:\n" \
         f"{nl.join(dinner_nal) if dinner_nal else '...'}\n\n" \
-        f"First april edition 😛"  # first april edit
+        # f"First april edition 😛"  # first april edit
     if need_ege:  # first april edit
         ege_text = f"До ЕГЭ по русскому осталось: {timedelta_to_humanity(timedelta)}"
         text = ege_text + "\n\n" + text
@@ -279,7 +279,7 @@ def make_finish_notification(eaters):
         f"{nl.join(dinner_card) if dinner_card else '...'}\n\n" \
         f"3) Обед, наличка:\n" \
         f"{nl.join(dinner_nal) if dinner_nal else '...'}\n\n" \
-        f"First april edition 😛"  # first april edit
+        # f"First april edition 😛"  # first april edit
     if need_ege:  # first april edit
         ege_text = f"До ЕГЭ по русскому осталось: {timedelta_to_humanity(timedelta)}"
         text = ege_text + "\n\n" + text
@@ -769,7 +769,8 @@ for event in longpool.listen():
                         continue
                     text = text.split()
                     command = text[0]
-                    comment = transliterate(" ".join(text[1:]))  # first april edit
+                    # comment = transliterate(" ".join(text[1:]))  # first april edit
+                    comment = " ".join(text[1:])
                     if command.startswith("++"):
                         if len(command) > 2:
                             mods = get_saved_eater1(chat_id=peer_id, user_id=from_id)

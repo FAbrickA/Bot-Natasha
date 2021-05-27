@@ -29,6 +29,18 @@ ege = {
         "date": dt.datetime(2021, 6, 11, 10, 0, 0),
         "name": "ЕГЭ по Физике"
     },
+    "ege_english": {
+        "date": dt.datetime(2021, 6, 18, 10, 0, 0),
+        "name": "ЕГЭ по Английскому"
+    },
+    "ege_english_ust": {
+        "date": dt.datetime(2021, 6, 21, 10, 0, 0),
+        "name": "ЕГЭ по Английскому (устный)"
+    },
+    "ege_chemistry": {
+        "date": dt.datetime(2021, 5, 31, 10, 0, 0),
+        "name": "ЕГЭ по Химии"
+    },
 }
 
 

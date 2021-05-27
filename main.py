@@ -150,6 +150,7 @@ def main():
             if event.type == VkBotEventType.MESSAGE_NEW:
                 print(event.object.message)
                 text = event.object.message['text'].strip()
+                lower_text = text.lower()
                 if not text:
                     continue
                 if event.from_user:  # Если написали в ЛС
@@ -159,12 +160,17 @@ def main():
                             message="Да!",
                             random_id=get_random_id()
                         )
+                    elif any(lower_text.startswith(value) for value in (
+                        '.апдейт',
+                        '.update',
+                        '.список'
+                    )):
+                        send_ege_poll(vk, event.message['from_id'])
                 else:
                     peer_id = event.message['peer_id']
                     if peer_id != PEER_TO_SEND:
                         print(f"Unknown peer_id: {peer_id}")
                         continue
-                    lower_text = text.lower()
                     if any(lower_text.startswith(value) for value in (
                         '.апдейт',
                         '.update',

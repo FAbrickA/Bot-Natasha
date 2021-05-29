@@ -122,6 +122,8 @@ def timedelta_to_humanity(delta: dt.timedelta):
         return f"{days_str} {hours_str} 😳"
     elif days >= 2:
         return f"{days_str} {hours_str} {minutes_str} 😱"
+    elif days >= 1:
+        return f"{days_str} {hours_str} {minutes_str} 😈"
     else:
         return f"{hours_str} {minutes_str} {seconds_str} 😈"
 
